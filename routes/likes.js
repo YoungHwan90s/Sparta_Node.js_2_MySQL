@@ -81,7 +81,6 @@ router.put("/posts/:postId/like", authMiddleware, async (req, res) => {
 
 // 좋아요 게시글 조회
 router.get("/posts/like", authMiddleware, async (req, res) => {
-    console.log("왜안돼")
     const { userId } = res.locals.user;
     const checkLike = await Like.findAll({
         attributes: ['postId'],
@@ -95,9 +94,6 @@ router.get("/posts/like", authMiddleware, async (req, res) => {
     const posts = await Post.findAll({
         where: { postId: results }
     })
-    console.log("출력2")
-    console.log(posts)
-
     if (posts !== null) {
         const results = posts.map((post) => {
             return {

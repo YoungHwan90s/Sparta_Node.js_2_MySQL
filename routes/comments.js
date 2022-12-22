@@ -15,23 +15,20 @@ router.post("/comments/:postId", authMiddleware, async (req, res) => {
             where: { userId }
         });
 
-        if (comment === "") {
+        if (typeof comment != 'string') {
             return res.status(412).send({
                 success: false,
-                errorMessage: "댓글 내용을 입력해주세요",
+                errorMessage: "데이터 형식이 올바르지 않습니다.",
             });
         } else {
             await Comment.create({ postId, userId, nickname, comment, createdAt });
-            res.status(201).send({
-                success: true,
-                result: "댓글을 작성하였습니다."
-            });
+            res.status(201).send({});
         }
     } catch (err) {
         console.log(err)
         res.status(412).send({
             success: false,
-            errorMessage: "데이터 형식이 올바르지 않습니다."
+            errorMessage: "댓글 작성에 실패하였습니다."
         });
     };
 })
@@ -44,15 +41,6 @@ router.get("/comments/:postId", async (req, res) => {
             order: [["createdAt", "desc"]],
             where: { postId }
         });
-
-        if (!comments.length) {
-            res.status(400).send({
-                success: false,
-                errorMessage: "댓글 조회에 실패하였습니다."
-            });
-            return
-        };
-
         const savedComment = comments.map((comment) => {
             return {
                 "Comment_ID": comment.commentId,
@@ -66,13 +54,15 @@ router.get("/comments/:postId", async (req, res) => {
         console.log(err);
         res.status(412).send({
             success: false,
-            errorMessage: "데이터 형식이 올바르지 않습니다"
+            errorMessage: "댓글 조회에 실패하였습니다."
         });
     };
 });
 
 // 댓글 수정 api
 router.put("/comments/:commentId", authMiddleware, async (req, res) => {
+
+    try {
     const { comment } = req.body;
     const { commentId } = req.params;
     const updatedAt = new Date()
@@ -80,27 +70,39 @@ router.put("/comments/:commentId", authMiddleware, async (req, res) => {
     const checkComment = await Comment.findAll({
         where: { commentId }
     });
-
-    if (!comment.length) {
+    if (typeof comment != 'string') {
         return res.status(412).send({
             success: false,
-            errorMessage: "데이터 형식이 올바르지 않습니다"
+            errorMessage: "데이터 형식이 올바르지 않습니다."
         });
     };
+    if (!checkComment.length) {
+        return res.status(400).send({
+            success: false,
+            errorMessage: "댓글이 존재하지 않습니다."
+        });
+    }
     if (checkComment.length) {
         await Comment.update({
             comment, updatedAt
         }, {
             where: { commentId }
         });
+        res.status(200).send({});
     } else {
         return res.status(404).send({
             success: false,
-            errorMessage: "댓글이 존재하지 않습니다."
+            errorMessage: "댓글 수정이 정상적으로 처리되지 않았습니다."
         });
-    }
-    res.status(200).send({});
-})
+    };
+    } catch(err) {
+        console.log(err);
+        res.status(400).send({
+            success: false,
+            errorMessage: "댓글 수정에 실패하였습니다."
+        });
+    };
+});
 
 // 댓글 삭제 api
 router.delete("/comments/:commentId", authMiddleware, async (req, res) => {
@@ -114,7 +116,7 @@ router.delete("/comments/:commentId", authMiddleware, async (req, res) => {
         if(!commentId) {
             return res.status(400),send({
                 success: false,
-                errorMessage: "댓글 삭제가 정상적으로 처리되지 않았습니다."
+                errorMessage: "댓글이 존재하지 않습니다."
             })
         }; 
         if (checkComment.length) {
@@ -124,7 +126,7 @@ router.delete("/comments/:commentId", authMiddleware, async (req, res) => {
         } else {
             return res.status(404).send({
                 success: false,
-                errorMessage: "댓글이 존재하지 않습니다"
+                errorMessage: "댓글 삭제가 정상적으로 처리되지 않았습니다."
             });
         };
     } catch (err) {

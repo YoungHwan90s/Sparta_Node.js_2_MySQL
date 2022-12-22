@@ -14,7 +14,7 @@ router.post("/signup", async (req, res) => {
         if (password !== confirmPassword) {
             res.status(400).send({
                 success: false,
-                Message: "패스워드가 패스워드 확인란과 다릅니다."
+                Message: "패스워드가 일치하지 않습니다."
             });
             return;
         }
@@ -25,7 +25,7 @@ router.post("/signup", async (req, res) => {
         if (existsUsers !== null) {
             res.status(400).send({
                 success: false,
-                Message: "닉네임이 이미 사용중입니다."
+                errorMessage: "중복된 닉네임입니다."
             });
             return;
         }
@@ -38,28 +38,35 @@ router.post("/signup", async (req, res) => {
     } catch (err) {
         console.log(err)
         res.status(400).send({
-            errorMessage: "요청한 데이터 형식이 올바르지 않습니다.",
+            errorMessage: "요청한 데이터 형식이 올바르지 않습니다."
         });
     };
 });
 
 // 로그인 api
 router.post("/login", async (req, res) => {
-    const { nickname, password } = req.body;
-    const user = await User.findOne({
-        where: { nickname },
-    });
-    // 1. 사용자가 존재하지 않거나,
-    // 2. 입력받은 비밀번호와 사용자의 비밀번호가 다를 때 에러메시지 발생
-    if (!user || password !== user.password) {
-        res.status(400).send({
-            errorMessage: "닉네임 또는 패스워드를 확인해주세요.",
+    try {
+        const { nickname, password } = req.body;
+        const user = await User.findOne({
+            where: { nickname },
         });
-        return;
-    }
-    res.send({
-        token: jwt.sign({ userId: user.userId }, "secret-key"),
-    });
+        // 1. 사용자가 존재하지 않거나,
+        // 2. 입력받은 비밀번호와 사용자의 비밀번호가 다를 때 에러메시지 발생
+        if (!user || password !== user.password) {
+            res.status(400).send({
+                errorMessage: "닉네임 또는 패스워드를 확인해주세요."
+            });
+            return;
+        }
+        res.send({
+            token: jwt.sign({ userId: user.userId }, "secret-key"),
+        });
+    } catch (err) {
+        console.log(err)
+        res.status(400).send({
+            errorMessage: "로그인에 실패하였습니다."
+        });
+    };
 });
 
 // 로그인 인증 미들웨어 등록 API 
