@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { User, Comment } = require("../models");
 const authMiddleware = require("../middlewares/auth-middleware");
+const { Op } = require("sequelize");
 
 
 // 댓글 작성 api
@@ -61,15 +62,29 @@ router.get("/comments/:postId", async (req, res) => {
 
 // 댓글 수정 api
 router.put("/comments/:commentId", authMiddleware, async (req, res) => {
-
     try {
+    const { userId } = res.locals.user;
     const { comment } = req.body;
     const { commentId } = req.params;
     const updatedAt = new Date()
 
     const checkComment = await Comment.findAll({
-        where: { commentId }
+        where: {
+            [Op.and]: [
+                { commentId },
+                { userId }
+            ]
+        }
     });
+
+    if (!checkComment.length) {
+        res.status(412).send({
+            success: false,
+            Message: "댓글 수정 권한이 없습니다."
+        });
+        return
+    };
+
     if (typeof comment != 'string') {
         return res.status(412).send({
             success: false,
@@ -107,11 +122,24 @@ router.put("/comments/:commentId", authMiddleware, async (req, res) => {
 // 댓글 삭제 api
 router.delete("/comments/:commentId", authMiddleware, async (req, res) => {
     try {
+        const { userId } = res.locals.user;
         const { commentId } = req.params;
         const checkComment = await Comment.findAll({
-            where: { commentId }
+            where: {
+                [Op.and]: [
+                    { commentId },
+                    { userId }
+                ]
+            }
         });
-        console.log(checkComment)
+
+        if (!checkComment.length) {
+            res.status(412).send({
+                success: false,
+                Message: "댓글 삭제 권한이 없습니다."
+            });
+            return
+        };
 
         if(!commentId) {
             return res.status(400),send({

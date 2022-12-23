@@ -17,41 +17,38 @@ router.put("/posts/:postId/like", authMiddleware, async (req, res) => {
             ]
         }
     });
-
     const posts = await Post.findOne({
         where: { postId }
     });
 
     if (posts === null) {
-        return res.status(404).send({
+        res.status(404).send({
             success: false,
             errorMessage: "게시글이 존재하지 않습니다."
         });
+        return
     };
     // Likes 테이블에 현재 postId와 userId가 없다면,
     // Posts 테이블에 like를 + 1 해주고,
     // Likes 테이블에 postId와 userId를 추가
     if (addLike === null) {
         const like = posts.like + 1;
+
         await Like.create({
             postId, userId, likedAt
         });
         await Post.update({
             like
         }, {
-            where: {
-                [Op.and]: [
-                    { postId },
-                    { userId }
-                ]
-            }
+            where: { postId }
         });
-        return res.status(200).send({});
+        res.status(200).send({});
+        return
     }
     // 현재 로그인한 계정이 좋아요 눌렀던 게시글에 좋아요를 또 호출한 상황
     // Likes 테이블에 현재 postId와 userId가 있다면,
     // Posts 테이블에 like를 -1 해주고 => (좋아요 취소)
-    // Likes 테이블에 postId와 userId를 제거
+    // Likes 테이블에 likeId 제거
     if (addLike != null) {
         const like = posts.like - 1;
         const deleteLikeId = addLike.likeId
@@ -59,20 +56,16 @@ router.put("/posts/:postId/like", authMiddleware, async (req, res) => {
         await Post.update({
             like
         }, {
-            where: {
-                [Op.and]: [
-                    { postId },
-                    { userId }
-                ]
-            }
+            where: { postId }
         });
         await Like.destroy({
             where: { likeId: deleteLikeId }
         });
-        return res.status(200).send({});
+        res.status(200).send({});
+        return
     }
     else {
-        return res.status(400).send({
+        res.status(400).send({
             success: false,
             result: "게시글 좋아요에 실패하였습니다."
         });
@@ -92,8 +85,10 @@ router.get("/posts/like", authMiddleware, async (req, res) => {
     });
 
     const posts = await Post.findAll({
+        order: [["like", "desc"]],
         where: { postId: results }
     })
+
     if (posts !== null) {
         const results = posts.map((post) => {
             return {
@@ -105,11 +100,12 @@ router.get("/posts/like", authMiddleware, async (req, res) => {
                 "수정일": post.updatedAt
             };
         });
-        return res.status(200).send({
+        res.status(200).send({
             "좋아한 게시글": results,
         });
+        return
     } else {
-        return res.status(404).send({
+        res.status(404).send({
             success: false,
             errorMessage: "좋아요 게시글 조회에 실패하였습니다."
         });

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { User, Post } = require("../models");
 const authMiddleware = require("../middlewares/auth-middleware");
-
+const { Op } = require("sequelize");
 
 // 게시글 작성 api
 router.post("/posts", authMiddleware, async (req, res) => {
@@ -103,12 +103,26 @@ router.get("/posts/:postId", async (req, res) => {
 // 게시글 수정 api
 router.put("/posts/:postId", authMiddleware, async (req, res) => {
     try {
+        const { userId } = res.locals.user;
         const { postId } = req.params;
         const { title, content } = req.body;
 
         const adjustPost = await Post.findAll({
-            where: { postId }
+            where: {
+                [Op.and]: [
+                    { postId },
+                    { userId }
+                ]
+            }
         });
+
+        if (!adjustPost.length) {
+            res.status(412).send({
+                success: false,
+                Message: "게시글 수정 권한이 없습니다."
+            });
+            return
+        };
         if (title === "" || content === "") {
             res.status(412).send({
                 success: false,
@@ -155,10 +169,24 @@ router.put("/posts/:postId", authMiddleware, async (req, res) => {
 // 게시글 삭제 api
 router.delete("/posts/:postId", authMiddleware, async (req, res) => {
     try {
+        const { userId } = res.locals.user;
         const { postId } = req.params;
         const deletePost = await Post.findAll({
-            where: { postId }
+            where: {
+                [Op.and]: [
+                    { postId },
+                    { userId }
+                ]
+            }
         });
+
+        if (!deletePost.length) {
+            res.status(412).send({
+                success: false,
+                Message: "게시글 삭제 권한이 없습니다."
+            });
+            return
+        };
         if (!deletePost.length) {
             res.status(404).send({
                 success: false,
