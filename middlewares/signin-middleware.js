@@ -10,7 +10,7 @@ module.exports = (req,res,next) => {
             'any.required': '닉네임은 필수 항목입니다.',
             'string.min': '닉네임은 3자 이상이야 합니다.',
             'string.max': '닉네임은 30자 이하이야 합니다.',
-            'string.alphanum': '닉네임은 영어 대소문자와 숫자로만 이루워질 수 있습니다.'
+            'string.alphanum': '닉네임은 영어 대소문자와 숫자로만 이루어질 수 있습니다.'
         }),
         password: Joi.string().min(4).required()
         .messages({
