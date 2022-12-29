@@ -2,10 +2,11 @@ const express = require("express");
 const router = express.Router();
 const { User } = require("../models");
 const authMiddleware = require("../middlewares/auth-middleware");
+const signinMiddleware = require("../middlewares/signin-middleware");
 const jwt = require("jsonwebtoken");
 
 // 회원가입 api
-router.post("/signup", async (req, res) => {
+router.post("/signup",signinMiddleware, async (req, res) => {
     try {
         const { nickname, password, confirmPassword } = req.body;
         const createdAt = new Date()
